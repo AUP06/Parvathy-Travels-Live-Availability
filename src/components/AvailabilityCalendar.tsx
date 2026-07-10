@@ -246,7 +246,7 @@ export default function AvailabilityCalendar({
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60 font-medium">
                   <span className="text-slate-500">Capacity:</span>
-                  <span className="font-bold text-slate-800">{selectedBus.capacity} Comfort Seats</span>
+                  <span className="font-bold text-slate-800">{selectedBus.capacity} Push Back Seats</span>
                 </div>
               </div>
 

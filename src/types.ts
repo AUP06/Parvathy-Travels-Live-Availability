@@ -3,13 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type BusType = 'Sleeper' | 'Seater' | 'Semi-Sleeper';
-
 export interface Bus {
   id: string;
   name: string;
   registrationNumber: string;
-  type: BusType;
+  type?: string; // Display seat type only if it comes from the Google Sheet
   isAc: boolean;
   capacity: number;
   amenities: string[];
@@ -32,11 +30,10 @@ export interface ParsedBookingData {
 export interface SearchQuery {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
-  busType: 'All' | BusType;
+  busType: 'All' | string;
 }
 
 export interface AppConfig {
   appsScriptUrl: string;
   refreshInterval: number; // in seconds
-  useMockFallback: boolean;
 }

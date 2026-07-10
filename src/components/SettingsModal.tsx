@@ -38,7 +38,6 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const [apiUrl, setApiUrl] = useState(config.appsScriptUrl);
   const [refreshInterval, setRefreshInterval] = useState(config.refreshInterval);
-  const [useMock, setUseMock] = useState(config.useMockFallback);
   const [copied, setCopied] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -46,8 +45,7 @@ export default function SettingsModal({
   const handleSave = () => {
     onSaveConfig({
       appsScriptUrl: apiUrl.trim(),
-      refreshInterval,
-      useMockFallback: useMock
+      refreshInterval
     });
     onClose();
   };
@@ -250,8 +248,8 @@ export default function SettingsModal({
                 )}
 
                 {/* Auto Refresh Configuration */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-2">
+                <div className="pt-2">
+                  <div className="space-y-2 max-w-md">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       Auto-Refresh Rate
@@ -266,23 +264,6 @@ export default function SettingsModal({
                       <option value={60}>Every 60 seconds</option>
                       <option value={120}>Every 2 minutes</option>
                     </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Fallback to Demo Data
-                    </label>
-                    <div className="flex items-center h-[41px] px-3.5 border border-slate-200 rounded-lg bg-slate-50/50">
-                      <label className="flex items-center gap-2 cursor-pointer w-full text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={useMock}
-                          onChange={(e) => setUseMock(e.target.checked)}
-                          className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                        />
-                        Use demo bookings if offline
-                      </label>
-                    </div>
                   </div>
                 </div>
               </div>

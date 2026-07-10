@@ -236,17 +236,19 @@ export default function AvailabilityCalendar({
                   <span className="text-slate-500">Reg Number:</span>
                   <span className="font-mono font-bold text-slate-800">{selectedBus.registrationNumber}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/60 font-medium">
-                  <span className="text-slate-500">Fleet Class:</span>
-                  <span className="font-bold text-slate-800">Premium Luxury Coach</span>
-                </div>
+                {selectedBus.type && (
+                  <div className="flex justify-between py-1 border-b border-slate-200/60 font-medium">
+                    <span className="text-slate-500">Seat Type:</span>
+                    <span className="font-bold text-slate-800">{selectedBus.type}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1 border-b border-slate-200/60 font-medium">
                   <span className="text-slate-500">AC Specification:</span>
                   <span className="font-bold text-slate-800">{selectedBus.isAc ? 'Climate Controlled AC' : 'Standard'}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60 font-medium">
                   <span className="text-slate-500">Capacity:</span>
-                  <span className="font-bold text-slate-800">{selectedBus.capacity} Seats</span>
+                  <span className="font-bold text-slate-800">{selectedBus.capacity} {selectedBus.type ? selectedBus.type : 'Seats'}</span>
                 </div>
               </div>
 

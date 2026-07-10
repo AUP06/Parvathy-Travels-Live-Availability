@@ -17,7 +17,8 @@ import {
   Info,
   Phone,
   MessageCircle,
-  X
+  X,
+  MapPin
 } from 'lucide-react';
 import { Bus, Booking, SearchQuery } from '../types';
 import { 
@@ -162,7 +163,7 @@ export default function BusList({
                   <div className="flex items-center gap-4 text-xs text-slate-500">
                     <span className="flex items-center gap-1.5 font-bold text-slate-600">
                       <Users className="w-4 h-4 text-slate-400" />
-                      {bus.capacity} Seats Available
+                      {bus.capacity} {bus.type ? bus.type : 'Seats'} Available
                     </span>
                   </div>
 
@@ -451,6 +452,31 @@ export default function BusList({
                     );
                   })}
                 </div>
+
+                {/* Office Location Link */}
+                <div className="pt-2 border-t border-slate-100">
+                  <a
+                    href="https://goo.gl/maps/PrXkFhunqqyj76518?g_st=aw"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3.5 rounded-xl border border-blue-100 bg-blue-50/20 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 shadow-2xs group cursor-pointer"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block">Office Location</span>
+                        <span className="font-extrabold text-slate-800 text-xs">Parvathy Travels Office</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">Click to view on Google Maps</span>
+                      </div>
+                    </div>
+                    <div className="text-blue-500 group-hover:translate-x-0.5 transition-transform">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </a>
+                </div>
+
               </div>
 
               {/* Footer */}

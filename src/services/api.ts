@@ -4,7 +4,6 @@
  */
 
 import { Bus, Booking, ParsedBookingData } from '../types';
-import { DEFAULT_BUSES, DEFAULT_BOOKINGS } from '../data';
 
 /**
  * Parses and cleans API responses to ensure absolute privacy.
@@ -12,7 +11,7 @@ import { DEFAULT_BUSES, DEFAULT_BOOKINGS } from '../data';
  */
 export function sanitizeAndParseResponse(data: any): ParsedBookingData {
   if (!data || typeof data !== 'object') {
-    return { buses: DEFAULT_BUSES, bookings: DEFAULT_BOOKINGS };
+    return { buses: [], bookings: [] };
   }
 
   let buses: Bus[] = [];
@@ -21,19 +20,13 @@ export function sanitizeAndParseResponse(data: any): ParsedBookingData {
   // Parse Buses
   if (Array.isArray(data.buses)) {
     buses = data.buses.map((b: any, index: number) => {
-      // Robust mapping with fallbacks
-      const id = String(b.id || b.busId || b.registrationNumber || `BUS-${index + 1}`).trim();
-      const name = String(b.name || b.busName || b.model || `Bus ${id}`).trim();
+      // Robust mapping with fallbacks from the sheet data, without mock placeholders
+      const id = String(b.id || b.busId || b.registrationNumber || '').trim();
+      const name = String(b.name || b.busName || b.model || '').trim();
       const registrationNumber = String(b.registrationNumber || b.regNo || b.plateNumber || b.id || '').trim();
       
-      // Determine Type
-      let type: 'Sleeper' | 'Seater' | 'Semi-Sleeper' = 'Seater';
-      const typeStr = String(b.type || '').toLowerCase();
-      if (typeStr.includes('sleeper') && !typeStr.includes('semi')) {
-        type = 'Sleeper';
-      } else if (typeStr.includes('semi')) {
-        type = 'Semi-Sleeper';
-      }
+      // Keep exact type if provided in the Google Sheet (no default mapping of labels)
+      const type = b.type ? String(b.type).trim() : undefined;
 
       // Check AC status
       let isAc = false;
@@ -41,12 +34,12 @@ export function sanitizeAndParseResponse(data: any): ParsedBookingData {
       else if ('ac' in b) {
         const acStr = String(b.ac).toLowerCase();
         isAc = acStr === 'true' || acStr === 'yes' || acStr === 'y' || acStr === 'ac';
-      } else {
+      } else if (name) {
         isAc = name.toLowerCase().includes('ac') || name.toLowerCase().includes('a/c');
       }
 
-      // Capacity
-      const capacity = Number(b.capacity || b.seats || (type === 'Sleeper' ? 30 : 40));
+      // Capacity - strictly from Sheet
+      const capacity = b.capacity || b.seats ? Number(b.capacity || b.seats) : 0;
 
       // Amenities
       let amenities: string[] = [];
@@ -54,23 +47,18 @@ export function sanitizeAndParseResponse(data: any): ParsedBookingData {
         amenities = b.amenities.map(String);
       } else if (typeof b.amenities === 'string') {
         amenities = b.amenities.split(',').map((s: string) => s.trim()).filter(Boolean);
-      } else {
-        // Generate sensible defaults if none provided
-        amenities = isAc ? ['Air Conditioning', 'Reading Lights'] : ['Reading Lights'];
-        if (type === 'Sleeper') amenities.push('Pillow', 'Premium Blanket');
-        amenities.push('USB Charging');
       }
 
       return {
-        id,
-        name,
+        id: id || registrationNumber,
+        name: name || registrationNumber,
         registrationNumber,
         type,
         isAc,
         capacity,
         amenities
       };
-    });
+    }).filter((bus: Bus) => bus.id && bus.registrationNumber); // strictly require registration number and ID
   }
 
   // Parse Bookings
@@ -100,40 +88,21 @@ export function sanitizeAndParseResponse(data: any): ParsedBookingData {
       .filter((b): b is Booking => b !== null);
   }
 
-  // Fallback to default schema if sheets returned empty
-  if (buses.length === 0) {
-    buses = DEFAULT_BUSES;
-  }
-
-  // If we have custom bookings but no buses matching, ensure we keep the default buses
+  // Ensure we match bookings only to existing buses from the Google Sheet
   if (buses.length > 0 && bookings.length > 0) {
-    // Check if the bookings refer to default bus IDs or custom bus IDs
     const busIds = new Set(buses.map(b => b.id));
-    const bookingBusIds = new Set(bookings.map(b => b.busId));
-    
-    // If bookings map to names, try to match or map
+    // Filter bookings to make sure they refer to valid buses. If they refer to a registrationNumber, try to match it
     bookings.forEach(bkg => {
       if (!busIds.has(bkg.busId)) {
-        // Try finding a bus that matches registration number or name
         const found = buses.find(b => b.registrationNumber === bkg.busId || b.name === bkg.busId);
         if (found) {
           bkg.busId = found.id;
-        } else {
-          // Create a dynamic public bus profile so booking is displayable without breaking
-          const newBusId = bkg.busId;
-          buses.push({
-            id: newBusId,
-            name: `Bus (${newBusId})`,
-            registrationNumber: newBusId,
-            type: 'Seater',
-            isAc: true,
-            capacity: 36,
-            amenities: ['Air Conditioning', 'USB Charging']
-          });
-          busIds.add(newBusId);
         }
       }
     });
+    
+    // Filter out any bookings for non-existent buses completely (never generate fake buses)
+    bookings = bookings.filter(bkg => busIds.has(bkg.busId));
   }
 
   return { buses, bookings };

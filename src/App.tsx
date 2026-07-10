@@ -20,7 +20,8 @@ import {
   Wifi,
   WifiOff,
   Sun,
-  Moon
+  Moon,
+  MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bus, Booking, SearchQuery, AppConfig } from './types';
@@ -38,12 +39,10 @@ export default function App() {
     const defaultUrl = 'https://script.google.com/macros/s/AKfycbxWB2qFkteAK5EOgjJXcBU8b2RVXQ8uZ97SGfKYh-2SFYq-qpb3zFiYW29Rw79kGKFd/exec';
     
     const savedInterval = localStorage.getItem('pt_refresh_interval');
-    const savedFallback = localStorage.getItem('pt_use_mock');
 
     return {
       appsScriptUrl: (savedUrl !== null && savedUrl.trim() !== '') ? savedUrl : defaultUrl,
-      refreshInterval: savedInterval ? Number(savedInterval) : 30, // Default 30 seconds
-      useMockFallback: savedFallback ? savedFallback === 'true' : true
+      refreshInterval: savedInterval ? Number(savedInterval) : 30 // Default 30 seconds
     };
   });
 
@@ -51,7 +50,7 @@ export default function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date('2026-07-09T18:12:00'));
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(config.refreshInterval);
 
@@ -76,8 +75,8 @@ export default function App() {
     if (!targetUrl) {
       setBuses([]);
       setBookings([]);
-      setLastUpdated(null);
-      setError("Loading...");
+      setLastUpdated(new Date());
+      setError('Please configure your Google Sheets Apps Script Web App URL.');
       return;
     }
 
@@ -91,8 +90,6 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to fetch live availability.');
-      setBuses([]);
-      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -128,7 +125,6 @@ export default function App() {
   const handleSaveConfig = (newConfig: AppConfig) => {
     localStorage.setItem('pt_apps_script_url', newConfig.appsScriptUrl);
     localStorage.setItem('pt_refresh_interval', String(newConfig.refreshInterval));
-    localStorage.setItem('pt_use_mock', String(newConfig.useMockFallback));
     
     setConfig(newConfig);
     setCountdown(newConfig.refreshInterval);
@@ -158,19 +154,6 @@ export default function App() {
       };
     }
   };
-
-  if (loading && buses.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-slate-600 font-semibold">
-            Loading live bus availability...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] text-slate-800 flex flex-col font-sans transition-colors duration-300" id="app-root">
@@ -263,30 +246,83 @@ export default function App() {
           onClearDates={() => setSearchQuery({ startDate: '', endDate: '', busType: 'All' })}
         />
 
-        {/* 4. Main Availability Fleet view */}
-        <BusList 
-          buses={buses}
-          bookings={bookings}
-          searchQuery={searchQuery}
-          onSelectDates={handleSelectDates}
-        />
+        {/* 4. Fleet Availability and Calendar */}
+        {loading && buses.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-[0_12px_40px_rgba(0,0,0,0.02)] min-h-[300px]">
+            <RefreshCw className="w-12 h-12 text-blue-600 animate-spin stroke-1.5" />
+            <h4 className="font-bold text-slate-800 text-lg font-display">Fetching live fleet availability...</h4>
+            <p className="text-slate-400 text-xs max-w-md leading-relaxed">
+              Connecting safely to the Parvathy Travels staff database via Google Apps Script. This will refresh momentarily.
+            </p>
+          </div>
+        ) : error && buses.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-red-100 p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-[0_12px_40px_rgba(239,68,68,0.02)] min-h-[300px]">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center border border-red-100 text-red-600">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h4 className="font-bold text-slate-800 text-lg font-display">Database Connection Error</h4>
+            <p className="text-slate-500 text-xs max-w-md leading-relaxed">
+              {error}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => fetchData()}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry Connection
+              </button>
+            </div>
+          </div>
+        ) : buses.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-[0_12px_40px_rgba(0,0,0,0.02)] min-h-[300px]">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
+              <Database className="w-6 h-6 stroke-1.5" />
+            </div>
+            <h4 className="font-bold text-slate-800 text-lg font-display">No Buses Found in Google Sheet</h4>
+            <p className="text-slate-450 text-xs max-w-md leading-relaxed">
+              The spreadsheet was connected successfully, but no active buses were found on the <strong>Buses</strong> sheet tab. Make sure your sheet has a "Buses" sheet tab and some bus inventory listed.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* 4. Main Availability Fleet view */}
+            <BusList 
+              buses={buses}
+              bookings={bookings}
+              searchQuery={searchQuery}
+              onSelectDates={handleSelectDates}
+            />
 
-        {/* 5. Complete Monthly Calendar Schedule View */}
-        <AvailabilityCalendar 
-          buses={buses}
-          bookings={bookings}
-        />
+            {/* 5. Complete Monthly Calendar Schedule View */}
+            <AvailabilityCalendar 
+              buses={buses}
+              bookings={bookings}
+            />
+          </>
+        )}
 
       </main>
 
       {/* 6. Static Human Footer */}
       <footer className="bg-white border-t border-slate-200 py-8 px-4 md:px-8 mt-12 text-slate-500 text-xs transition-colors duration-300">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-1.5 text-center md:text-left">
-            <p className="font-bold text-slate-900 font-display">Parvathy Travels Customer Portal</p>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              This is a secure, read-only public checker. Staff continues to manage scheduling safely in the administrative panel.
-            </p>
+          <div className="flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
+            <div className="space-y-1.5 max-w-md">
+              <p className="font-bold text-slate-900 font-display">Parvathy Travels Customer Portal</p>
+              <p className="text-[11px] leading-relaxed text-slate-400">
+                This is a secure, read-only public checker. Staff continues to manage scheduling safely in the administrative panel.
+              </p>
+            </div>
+            <a 
+              href="https://goo.gl/maps/PrXkFhunqqyj76518?g_st=aw" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/80 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200/80 transition-all duration-200 shadow-2xs hover:shadow-xs hover:border-slate-300 cursor-pointer shrink-0"
+            >
+              <MapPin className="w-3.5 h-3.5 text-blue-600" />
+              <span>Office Location (Google Maps)</span>
+            </a>
           </div>
           
           <div className="flex items-center justify-center gap-2 text-slate-400 text-[11px]">

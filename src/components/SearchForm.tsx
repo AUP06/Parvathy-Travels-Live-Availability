@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Calendar as CalendarIcon, Filter, ArrowRight, X } from 'lucide-react';
-import { SearchQuery, BusType } from '../types';
+import { SearchQuery } from '../types';
 
 interface SearchFormProps {
   query: SearchQuery;
@@ -28,10 +28,6 @@ export default function SearchForm({
     }
     
     onChangeQuery(updated);
-  };
-
-  const handleTypeChange = (type: 'All' | BusType) => {
-    onChangeQuery({ ...query, busType: type });
   };
 
   const setPresetDates = (daysFromTodayStart: number, duration: number) => {

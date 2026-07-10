@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bus, Booking, SearchQuery, AppConfig } from './types';
-import { DEFAULT_BUSES, DEFAULT_BOOKINGS } from './data';
 import { fetchLiveBookingData, sanitizeAndParseResponse } from './services/api';
 import SearchForm from './components/SearchForm';
 import BusList from './components/BusList';
@@ -48,8 +47,8 @@ export default function App() {
     };
   });
 
-  const [buses, setBuses] = useState<Bus[]>(DEFAULT_BUSES);
-  const [bookings, setBookings] = useState<Booking[]>(DEFAULT_BOOKINGS);
+  const [buses, setBuses] = useState<Bus[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date('2026-07-09T18:12:00'));
@@ -75,11 +74,10 @@ export default function App() {
   // Fetch Logic
   const fetchData = useCallback(async (targetUrl = config.appsScriptUrl) => {
     if (!targetUrl) {
-      // No URL configured, load default static data
-      setBuses(DEFAULT_BUSES);
-      setBookings(DEFAULT_BOOKINGS);
-      setLastUpdated(new Date());
-      setError(null);
+      setBuses([]);
+      setBookings([]);
+      setLastUpdated(null);
+      setError("Loading...");
       return;
     }
 
@@ -93,15 +91,12 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to fetch live availability.');
-      // Fallback if checked
-      if (config.useMockFallback) {
-        setBuses(DEFAULT_BUSES);
-        setBookings(DEFAULT_BOOKINGS);
-      }
+      setBuses([]);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
-  }, [config.appsScriptUrl, config.useMockFallback]);
+  }, [config.appsScriptUrl]);
 
   // Initial load
   useEffect(() => {
@@ -163,6 +158,19 @@ export default function App() {
       };
     }
   };
+
+  if (loading && buses.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-slate-600 font-semibold">
+            Loading live bus availability...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] text-slate-800 flex flex-col font-sans transition-colors duration-300" id="app-root">

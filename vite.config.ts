@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: '/parvathy-web-app/',
+    base: '/Parvathy-Travels-Live-Availability/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

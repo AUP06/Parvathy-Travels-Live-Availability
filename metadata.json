@@ -1,0 +1,6 @@
+{
+  "name": "Parvathy Travels Availability Portal",
+  "description": "A read-only public portal for customers to check real-time bus availability and booking statuses for Parvathy Travels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
